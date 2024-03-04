@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let currentScene = (scene as? UIWindowScene) else { return }
         window = UIWindow(windowScene: currentScene)
 //        window?.rootViewController = GalleryPageViewController()
-        window?.rootViewController = PreviewController()
+        window?.rootViewController = ExtendedPreviewController()
         window?.makeKeyAndVisible()
     }
 

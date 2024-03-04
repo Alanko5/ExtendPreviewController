@@ -12,9 +12,15 @@ protocol GalleryCollectionViewDelegate: AnyObject {
     func galleryCollectionView(_ view: GalleryCollectionView, goTo item:ExtendedPreviewItem)
 }
 
+protocol GalleryCollectionViewDataSource: AnyObject {
+    func numberOfPreviewItems(in view: GalleryCollectionView) -> Int
+    func previewController(_ view: GalleryCollectionView, previewItemAt index: Int) -> ExtendedPreviewItem
+}
+
 // MARK: - collection
 final class GalleryCollectionView: UIView {
     weak var delegate: GalleryCollectionViewDelegate?
+    weak var dataSource: GalleryCollectionViewDataSource? 
     
     private let galleryView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -52,7 +58,8 @@ final class GalleryCollectionView: UIView {
         set { galleryView.isScrollEnabled = newValue }
     }
     
-    func update(model items:[ExtendedPreviewItem], focusedItem: ExtendedPreviewItem) {
+    func update(model items:[ExtendedPreviewItem], focusedItem: ExtendedPreviewItem?) {
+        guard let focusedItem else { return }
         cellViews = GalleryItemCellView.buildViews(for: items,
                                                    focusedItem: focusedItem,
                                                    size: itemSize,
@@ -99,8 +106,13 @@ final class GalleryCollectionView: UIView {
         guard scrollViewWidth != lastKnownScrollViewWidth else { return }
         
         let horizontalContentInset = 0.5 * (scrollViewWidth - itemSize)
-        galleryView.contentInset.left = horizontalContentInset
-        galleryView.contentInset.right = horizontalContentInset
+        var contentInsets = galleryView.contentInset
+        contentInsets.left = horizontalContentInset
+        contentInsets.right = horizontalContentInset
+        
+        UIView.animate(withDuration: 0.25) {
+            self.galleryView.contentInset = contentInsets
+        }
         
         lastKnownScrollViewWidth = scrollViewWidth
     }
@@ -130,12 +142,20 @@ extension GalleryCollectionView {
             newFrame.size.width =  itemsWidth + spacingWidth
         }
         
+        for arrangedSubview in stackView.arrangedSubviews {
+            stackView.removeArrangedSubview(arrangedSubview)
+            arrangedSubview.removeFromSuperview()
+        }
+        
         for arrangedSubview in arrangedSubviews {
             stackView.addArrangedSubview(arrangedSubview)
         }
         
         stackView.frame = newFrame
         galleryView.contentSize = newFrame.size
+        
+        layoutIfNeeded()
+        
         updateScrollViewContentInsetsIfNecessary()
     }
 }
